@@ -27,7 +27,7 @@ const (
 	querySelectivity = 1
 	queryShape       = cellShape
 
-	latenciesMaxCount     = (queryMaxLevel - queryMinLevel + 1) * 100
+	latenciesMaxCount     = (queryMaxLevel - queryMinLevel + 1) * 1000
 	throughputMaxDuration = time.Second
 
 	updateInterval    = time.Second
@@ -37,7 +37,7 @@ const (
 var cfg = &s2IndexConfig{
 	minLevel: 0,
 	maxLevel: 30,
-	maxCells: 1,
+	maxCells: 4,
 }
 
 type s2IndexConfig struct {
@@ -327,6 +327,20 @@ func main() {
 		}
 		if err := latencies(subArgs[0], subArgs[1], s2Cfg); err != nil {
 			log.Fatal(err)
+		}
+	case `s2throughput`, `pgthroughput`:
+		subArgs := args[1:]
+		if len(subArgs) != 2 {
+			log.Fatalf("usage: %s %s <conn> <data.csv.bz2>", os.Args[0], args[0])
+		}
+		var s2Cfg *s2IndexConfig
+		if args[0] == `s2throughput` {
+			s2Cfg = cfg
+		}
+		for i := 1; i <= 128; i *= 2 {
+			if err := throughputWrite(subArgs[0], subArgs[1], s2Cfg, i); err != nil {
+				log.Fatal(err)
+			}
 		}
 	default:
 		log.Fatalf("unknown command: %s", args[0])
